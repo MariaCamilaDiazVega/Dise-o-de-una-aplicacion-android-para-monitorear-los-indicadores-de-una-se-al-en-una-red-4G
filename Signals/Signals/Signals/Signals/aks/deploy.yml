@@ -1,0 +1,45 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: signals
+  name: signals
+  namespace: #{environment}#
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: signals
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: signals
+    spec:
+      containers:
+        - image: leandro.azurecr.io/signals:#{Build.BuildId}#
+          imagePullPolicy: IfNotPresent
+          name: signals
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signals
+  namespace: #{environment}#
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "api-ingress-subnet"
+  labels:
+    app: signals
+spec:
+  ports:
+      - port: 80
+        protocol: TCP
+        targetPort: 80
+  selector:
+    app: signals
+  type: LoadBalancer
